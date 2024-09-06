@@ -6,6 +6,10 @@ function App() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");  
 
+  const [editId, setEditId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+
   useEffect(() => {
     // json-server 데이터 받기
     fetch('http://localhost:4000/todos')
@@ -64,18 +68,67 @@ function App() {
     .catch(e => console.log("error =>", e));
   }
 
+  const editTodo = (todo) => {
+    setEditId(todo.id);
+    setEditTitle(todo.title);
+    setEditContent(todo.content);
+  }
+
+  const updateTodo = () => {
+    const updatedTodo = {
+      title: editTitle,
+      content: editContent
+    }
+
+    fetch(`http://localhost:4000/todos/${editId}`, {
+      method: "PATCH",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedTodo)
+    })
+    .then(response => response.json())
+    .then(data => {
+      setTodos(todos.map(todo => todo.id === editId ? data : todo));
+      setEditId(null);
+      setEditTitle("");
+      setEditContent("");
+    })
+    .catch(e => console.log("업데이트 에러", e));
+  }
+
   return (
     <>
       <h1>json-server todoList</h1>
-      title: <input value={title} onChange={(e) => setTitle(e.target.value)}/><br/>
-      content: <input value={content} onChange={(e) => setContent(e.target.value)}/><br/>
-      <button type="button" onClick={saveTodos}>저장</button>
+      title: 
+      <input 
+        value={editId ? editTitle : title} 
+        onChange={(e) => 
+          {editId ? setEditTitle(e.target.value) : setTitle(e.target.value)}
+        }
+      /><br/>
+
+      content: 
+      <input 
+        value={editId ? editContent : content} 
+        onChange={(e) => 
+          {editId ? setEditContent(e.target.value) : setContent(e.target.value)}          
+        }
+      /><br/>
+
+      <button 
+        type="button" 
+        onClick={editId ? updateTodo : saveTodos}
+      >
+        {editId ? "수정" : "저장"}
+      </button>
       {        
         todos.map(todo => {
           return(
             <div key={todo.id}>
               <strong>{todo.title}</strong>
               <p>{todo.content}</p>
+              <button type="button" onClick={() => editTodo(todo)}>수정</button>              
               <button type="button" onClick={() => deleteTodo(todo.id)}>삭제</button>
             </div>
           )
